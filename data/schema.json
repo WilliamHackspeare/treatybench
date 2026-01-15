@@ -1,0 +1,114 @@
+{
+  "task_types": {
+    "A1_classification": {
+      "name": "Provision Classification",
+      "category": "understanding",
+      "description": "Classify treaty provisions by domain",
+      "input_format": "Treaty provision text",
+      "output_format": "Domain label from: arms_control, trade, environment, human_rights, ai_governance",
+      "metric": "accuracy",
+      "example": {
+        "input": "Each of the Parties to the Treaty undertakes to pursue negotiations in good faith on effective measures relating to cessation of the nuclear arms race at an early date and to nuclear disarmament...",
+        "output": "arms_control"
+      }
+    },
+    "A2_obligation": {
+      "name": "Obligation Extraction",
+      "category": "understanding",
+      "description": "Extract obligations and rights from treaty provisions",
+      "input_format": "Treaty article text",
+      "output_format": "JSON list of obligations with type (obligation/right/prohibition) and description",
+      "metric": "f1",
+      "example": {
+        "input": "Each State Party undertakes not to transfer to any recipient whatsoever nuclear weapons...",
+        "output": [
+          {"type": "prohibition", "actor": "State Party", "action": "transfer nuclear weapons to any recipient"}
+        ]
+      }
+    },
+    "A3_party_id": {
+      "name": "Party Identification",
+      "category": "understanding",
+      "description": "Identify which parties bear which obligations",
+      "input_format": "Treaty provision text",
+      "output_format": "JSON mapping of party types to their obligations",
+      "metric": "accuracy"
+    },
+    "A4_ambiguity": {
+      "name": "Ambiguity Detection",
+      "category": "understanding",
+      "description": "Identify legally ambiguous phrases and explain why",
+      "input_format": "Treaty text",
+      "output_format": "JSON list of ambiguous phrases with explanations",
+      "metric": "f1_human"
+    },
+    "B1_completion": {
+      "name": "Provision Completion",
+      "category": "generation",
+      "description": "Complete a partial treaty provision",
+      "input_format": "Partial provision with [BLANK] marker",
+      "output_format": "Completed provision text",
+      "metric": "bleu_human"
+    },
+    "B2_generation": {
+      "name": "Provision Generation",
+      "category": "generation",
+      "description": "Generate treaty provision from specification",
+      "input_format": "Specification describing desired provision",
+      "output_format": "Draft provision text in treaty language",
+      "metric": "rubric_1_5"
+    },
+    "B3_revision": {
+      "name": "Provision Revision",
+      "category": "generation",
+      "description": "Revise provision based on critique",
+      "input_format": "Original provision + critique",
+      "output_format": "Revised provision addressing critique",
+      "metric": "improvement_delta"
+    },
+    "B4_counter": {
+      "name": "Counter-Proposal Generation",
+      "category": "generation",
+      "description": "Generate acceptable counter-proposal",
+      "input_format": "Position A's proposal + Position B's concerns",
+      "output_format": "Counter-proposal acceptable to both parties",
+      "metric": "rubric_1_5"
+    }
+  },
+  "domains": {
+    "arms_control": {
+      "name": "Arms Control",
+      "treaties": ["NPT", "CWC", "CTBT", "BWC", "FMCT drafts", "New START"],
+      "keywords": ["nuclear", "weapons", "disarmament", "verification", "non-proliferation"]
+    },
+    "trade": {
+      "name": "Trade",
+      "treaties": ["WTO GATT", "WTO GATS", "WTO TRIPs", "USMCA", "CPTPP"],
+      "keywords": ["tariff", "trade", "goods", "services", "market access"]
+    },
+    "environment": {
+      "name": "Environment",
+      "treaties": ["Paris Agreement", "Montreal Protocol", "CBD", "UNFCCC", "Kyoto Protocol"],
+      "keywords": ["emissions", "climate", "biodiversity", "pollution", "conservation"]
+    },
+    "human_rights": {
+      "name": "Human Rights",
+      "treaties": ["UDHR", "ICCPR", "ICESCR", "ECHR", "CAT"],
+      "keywords": ["rights", "freedom", "dignity", "discrimination", "torture"]
+    },
+    "ai_governance": {
+      "name": "AI Governance",
+      "treaties": ["EU AI Act", "OECD AI Principles", "UNESCO AI Recommendation"],
+      "keywords": ["artificial intelligence", "algorithm", "automated", "AI system", "machine learning"]
+    }
+  },
+  "rubrics": {
+    "generation_quality": {
+      "1": "Incoherent or legally invalid",
+      "2": "Coherent but misses key requirements",
+      "3": "Adequate but generic/vague",
+      "4": "Good, addresses requirements with minor gaps",
+      "5": "Excellent, could serve as viable treaty language"
+    }
+  }
+}
