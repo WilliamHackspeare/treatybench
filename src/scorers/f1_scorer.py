@@ -2,7 +2,12 @@
 Custom F1 scorer for obligation extraction task.
 
 Compares extracted obligations against gold standard using
-action-based matching with fuzzy overlap.
+semantic similarity matching (Sentence-BERT) with type/actor bonuses.
+
+Improvements over simple token overlap:
+- Semantic similarity captures paraphrases and synonymy
+- Type matching bonus for obligation/right/prohibition
+- Actor matching bonus for entity recognition
 """
 
 import json
@@ -20,6 +25,8 @@ from inspect_ai.scorer import (
     PARTIAL,
 )
 from inspect_ai.solver import TaskState
+
+from .semantic_scorer import get_semantic_scorer, semantic_similarity
 
 
 def parse_json_response(text: str) -> list[dict]:
@@ -44,39 +51,128 @@ def parse_json_response(text: str) -> list[dict]:
     return []
 
 
-def normalize_action(action: str) -> str:
-    """Normalize action text for comparison."""
-    return action.lower().strip()[:50]  # First 50 chars, lowercased
+def normalize_text(text: str) -> str:
+    """Normalize text for comparison."""
+    return text.lower().strip()
 
 
-def compute_f1(predicted: list[dict], gold: list[dict]) -> dict[str, float]:
-    """Compute F1 score based on action overlap."""
-    # Extract normalized actions
-    pred_actions = set()
-    for p in predicted:
-        if isinstance(p, dict) and 'action' in p:
-            pred_actions.add(normalize_action(p['action']))
+def compute_obligation_similarity(pred: dict, gold: dict) -> float:
+    """Compute similarity score between predicted and gold obligation.
 
-    gold_actions = set()
+    Combines:
+    - Action semantic similarity (0-1)
+    - Type match bonus (+0.1)
+    - Actor match bonus (+0.1)
+
+    Returns score in range [0, 1.2] but capped at 1.0
+    """
+    score = 0.0
+
+    # Action similarity (primary component)
+    pred_action = pred.get('action', '')
+    gold_action = gold.get('action', '')
+
+    if pred_action and gold_action:
+        score = semantic_similarity(pred_action, gold_action)
+
+    # Type match bonus
+    pred_type = normalize_text(pred.get('type', ''))
+    gold_type = normalize_text(gold.get('type', ''))
+    if pred_type and gold_type and pred_type == gold_type:
+        score += 0.1
+
+    # Actor match bonus (semantic similarity for flexibility)
+    pred_actor = pred.get('actor', '')
+    gold_actor = gold.get('actor', '')
+    if pred_actor and gold_actor:
+        actor_sim = semantic_similarity(pred_actor, gold_actor)
+        if actor_sim >= 0.7:  # High similarity threshold for actors
+            score += 0.1
+
+    return min(score, 1.0)
+
+
+def compute_f1_semantic(
+    predicted: list[dict],
+    gold: list[dict],
+    threshold: float = 0.6
+) -> dict[str, float]:
+    """Compute F1 score using semantic matching.
+
+    Uses greedy matching: for each gold obligation, find best matching
+    prediction above threshold. Matched predictions are consumed.
+
+    Args:
+        predicted: List of predicted obligation dicts
+        gold: List of gold obligation dicts
+        threshold: Minimum similarity for a match
+
+    Returns:
+        Dict with precision, recall, f1, and detailed metrics
+    """
+    if not gold:
+        # No gold standards - if predictions exist, precision is 0
+        return {
+            "precision": 0.0 if predicted else 1.0,
+            "recall": 1.0,  # Vacuously true
+            "f1": 0.0 if predicted else 1.0,
+            "pred_count": len(predicted),
+            "gold_count": 0,
+            "matches": 0,
+            "avg_match_score": 0.0,
+        }
+
+    if not predicted:
+        return {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "pred_count": 0,
+            "gold_count": len(gold),
+            "matches": 0,
+            "avg_match_score": 0.0,
+        }
+
+    # Greedy matching
+    available_preds = list(range(len(predicted)))
+    matches = 0
+    match_scores = []
+
     for g in gold:
-        if isinstance(g, dict) and 'action' in g:
-            gold_actions.add(normalize_action(g['action']))
+        best_score = 0.0
+        best_pred_idx = -1
 
-    # Compute overlap
-    overlap = len(pred_actions & gold_actions)
+        for pred_idx in available_preds:
+            sim = compute_obligation_similarity(predicted[pred_idx], g)
+            if sim > best_score:
+                best_score = sim
+                best_pred_idx = pred_idx
 
-    precision = overlap / max(len(pred_actions), 1)
-    recall = overlap / max(len(gold_actions), 1)
+        if best_score >= threshold and best_pred_idx >= 0:
+            matches += 1
+            match_scores.append(best_score)
+            available_preds.remove(best_pred_idx)
+
+    precision = matches / len(predicted)
+    recall = matches / len(gold)
     f1 = 2 * precision * recall / max(precision + recall, 0.001)
+    avg_match_score = sum(match_scores) / len(match_scores) if match_scores else 0.0
 
     return {
         "precision": precision,
         "recall": recall,
         "f1": f1,
-        "pred_count": len(pred_actions),
-        "gold_count": len(gold_actions),
-        "overlap": overlap,
+        "pred_count": len(predicted),
+        "gold_count": len(gold),
+        "matches": matches,
+        "avg_match_score": avg_match_score,
     }
+
+
+# Legacy function for backward compatibility
+def compute_f1(predicted: list[dict], gold: list[dict]) -> dict[str, float]:
+    """Compute F1 score - now uses semantic matching."""
+    return compute_f1_semantic(predicted, gold)
 
 
 @scorer(metrics=[accuracy()])
