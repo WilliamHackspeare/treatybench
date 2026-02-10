@@ -2,7 +2,7 @@
 
 Benchmarking LLM Capabilities in Treaty Language Understanding and Generation
 
-**Paper:** AI for Peace Workshop @ ICLR 2026
+**Paper:** Targeting NeurIPS 2026 Datasets and Benchmarks Track
 
 ## Overview
 
@@ -63,11 +63,20 @@ python scripts/run_experiments.py --list
 # Claude Opus 4.5
 --model anthropic/claude-opus-4-5-20251101
 
+# Claude Sonnet 4
+--model anthropic/claude-sonnet-4-20250514
+
+# GPT-4o
+--model openai/gpt-4o
+
 # GPT-5.2
 --model openai/gpt-5.2
 
-# Gemini 3.0 Pro
---model google/gemini-3.0-pro
+# o3-mini
+--model openai/o3-mini
+
+# Gemini 2.5 Pro
+--model google/gemini-2.5-pro
 
 # Grok 4.1
 --model grok/grok-4-1-fast-reasoning
@@ -75,19 +84,40 @@ python scripts/run_experiments.py --list
 
 ## Results
 
+### Main Results
+
 | Model | A1 | A2 | A3 | A4 | B1 | B2 | B3 |
 |-------|----|----|----|----|----|----|-----|
-| Opus 4.5 | 92 (87) | **64** (65) | 93 | **93** | **5.0** | 4.95 | **4.73** |
-| GPT-5.2 | **100** (67) | 48 (65) | 88 | 80 | **5.0** | **5.0** | 4.33 |
-| Grok 4.1 | **100** (80) | 30 (**90**) | **98** | 77 | 4.73 | 4.85 | **4.73** |
+| Claude Opus 4.5 | 92 | **64** | 92 | **93** | 100 | 95 | **4.73** |
+| Claude Sonnet 4 | 96 | 59 | **95** | 90 | 100 | 95 | 4.07 |
+| GPT-4o | **100** | 59 | 88 | 77 | 87 | 98 | 4.47 |
+| GPT-5.2 | **100** | 48 | 88 | 80 | **100** | **100** | 4.33 |
+| Gemini 2.5 Pro | **100** | 41 | **98** | 87 | **100** | **100** | **4.93** |
+| Grok 4.1 | **100** | 30 | **98** | 77 | 93 | **100** | **4.73** |
+| o3-mini | 92 | 32 | 75 | 67 | 63 | 60 | 2.40 |
 
-*Understanding tasks (A1-A4): accuracy (%). Generation tasks (B1-B3): LLM judge score (1-5). Hard variants in parentheses.*
+*Understanding tasks (A1-A4): accuracy (%). Generation tasks: B1/B2 = multijudge accuracy (% items rated >= 4/5), B3 = mean judge score (1-5).*
+
+### Hard Variants
+
+| Model | A1-H | A2-H | B2-H |
+|-------|------|------|------|
+| Claude Opus 4.5 | 87 | 65 | 100 |
+| Claude Sonnet 4 | 80 | 80 | 100 |
+| GPT-4o | **93** | **85** | 73 |
+| GPT-5.2 | 67 | 65 | 100 |
+| Gemini 2.5 Pro | 73 | **85** | 100 |
+| Grok 4.1 | 80 | **90** | 100 |
+| o3-mini | 60 | 35 | 80 |
 
 ### Key Findings
 
-1. **Extraction is the hardest understanding task** (30-64%), while classification approaches ceiling (92-100%)
-2. **Hard variants reveal unexpected patterns**: Grok 4.1 improves 60 points on nested conditional extraction (A2-Hard)
-3. **Generation approaches ceiling** (4.3-5.0/5), suggesting need for more challenging specifications
+1. **Striking capability gap**: Classification approaches ceiling (92-100%) while extraction remains challenging (30-64%)
+2. **Gemini 2.5 Pro leads on generation**: Highest B3 score (4.93) and perfect B1/B2 multijudge accuracy, despite moderate extraction (41%)
+3. **Reasoning model paradox**: o3-mini achieves lowest extraction (32%) and dramatically lower multijudge generation scores (63% B1, 60% B2), revealing self-enhancement bias in single-judge evaluation
+4. **Hard variants reveal unexpected patterns**: Extraction improves on hard variants; Grok 4.1 jumps from 30% to 90% on A2-Hard
+5. **Adversarial revision is most discriminating**: Scores range from 2.40 (o3-mini) to 4.93 (Gemini 2.5 Pro)
+6. **Domain effects**: Arms control provisions are hardest to classify; AI governance easiest
 
 ## Scoring Methods
 
@@ -124,7 +154,13 @@ treatybench/
 │       └── *_hard.jsonl           # Hard variant data
 ├── scripts/
 │   ├── run_experiments.py         # Experiment runner
-│   └── analyze_experiments.py     # Results analysis
+│   ├── analyze_experiments.py     # Results analysis
+│   └── generate_figures.py        # Paper figure generation
+├── paper/
+│   ├── treatybench_full.tex       # Full NeurIPS-format paper
+│   ├── treatybench.tex            # Original workshop paper
+│   ├── figures/                   # Generated figures (radar, heatmap, etc.)
+│   └── neurips_2025.sty           # NeurIPS style file
 ├── logs/                          # Inspect evaluation logs
 ├── pyproject.toml
 └── README.md
@@ -134,9 +170,9 @@ treatybench/
 
 ```bibtex
 @inproceedings{treatybench2026,
-  title={TreatyBench: Benchmarking LLM Capabilities in Treaty Language},
+  title={TreatyBench: A Comprehensive Benchmark for Evaluating LLM Capabilities in International Treaty Language Understanding and Generation},
   author={Prasad, Amritanshu},
-  booktitle={AI for Peace Workshop, ICLR 2026},
+  booktitle={NeurIPS Datasets and Benchmarks Track},
   year={2026}
 }
 ```

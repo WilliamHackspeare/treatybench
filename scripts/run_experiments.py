@@ -1,10 +1,13 @@
 """
 TreatyBench Experiment Runner
 
-Runs all tasks on 4 frontier models using Inspect AI framework:
+Runs all tasks on 7 frontier models using Inspect AI framework:
 - Claude Opus 4.5 (anthropic/claude-opus-4-5-20251101)
+- Claude Sonnet 4 (anthropic/claude-sonnet-4-20250514)
+- GPT-4o (openai/gpt-4o)
 - GPT-5.2 (openai/gpt-5.2)
-- Gemini 3.0 Pro (google/gemini-3.0-pro)
+- o3-mini (openai/o3-mini)
+- Gemini 2.5 Pro (google/gemini-2.5-pro)
 - Grok 4.1 (xai/grok-4.1)
 
 Usage:
@@ -32,10 +35,12 @@ if os.getenv("GROK_API_KEY") and not os.getenv("XAI_API_KEY"):
 # Model configurations
 MODELS = {
     "opus": "anthropic/claude-opus-4-5-20251101",
+    "sonnet": "anthropic/claude-sonnet-4-20250514",
+    "gpt4o": "openai/gpt-4o",
     "gpt5": "openai/gpt-5.2",
-    "gemini": "google/gemini-3.0-pro",
+    "o3mini": "openai/o3-mini",
+    "gemini25pro": "google/gemini-2.5-pro",
     "grok41": "grok/grok-4-1-fast-reasoning",  # Grok 4.1 with reasoning
-    "grok4": "grok/grok-4-0709",  # Grok 4.0
 }
 
 # Task configurations (task_name: file_path@task_function)
